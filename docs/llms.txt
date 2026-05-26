@@ -5,7 +5,7 @@
 
 ## Libraries
 
-- [remote-logger](https://rohittp.com/dependables/remote-logger): Timber tree that writes NDJSON logs to per-day/per-hour files, plus a push-notification-triggered WorkManager worker that zips and uploads them to Firebase Cloud Storage. Send a `dump_logs` FCM data message; get the logs back from any installed device.
+- [remote-logger](https://rohittp.com/dependables/remote-logger): Timber tree + push-triggered uploader for Android. Zips databases, shared_prefs, datastore, and recent logs into Firebase Cloud Storage when a `dump_logs` FCM data message arrives. The same zip is exposed via `ExportZipWriter` for in-app "export my data" UIs. Device id comes from Widevine DRM (no ANDROID_ID), exposed publicly via `DeviceId.get()`.
 
 ## Source
 

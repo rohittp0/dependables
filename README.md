@@ -6,7 +6,7 @@ of the rest.
 
 | Library | Description | Docs |
 |--------|-------------|------|
-| [remote-logger](remote-logger/) | A Timber tree that writes NDJSON logs to per-day/per-hour files, plus a push-triggered WorkManager worker that zips and uploads them to Firebase Cloud Storage. | https://rohittp.com/dependables/remote-logger |
+| [remote-logger](remote-logger/) | Timber tree + push-triggered uploader. Zips databases, shared_prefs, datastore, and recent logs into Firebase Cloud Storage when a `dump_logs` FCM data message arrives. The same zip is exposed via `ExportZipWriter` for in-app "export my data" UIs. | https://rohittp.com/dependables/remote-logger |
 
 ## Layout
 

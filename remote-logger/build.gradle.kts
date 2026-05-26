@@ -47,15 +47,23 @@ dependencies {
     api(libs.firebase.messaging)
 
     testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.androidx.test.core)
     testImplementation(libs.coroutines.test)
-    testImplementation(libs.work.testing)
 }
 
 mavenPublishing {
     // publishToMavenCentral(automaticRelease = true) and signing are configured centrally in
     // the root build.gradle.kts `subprojects { }` block.
+
+    // AGP 9's bundled Dokka (1.4.32) cannot read Kotlin 2.3 metadata — skip the javadoc jar
+    // entirely. Sources jar still ships, and Maven Central accepts a sources-only publish for
+    // Kotlin libraries via vanniktech.
+    configure(
+        com.vanniktech.maven.publish.AndroidSingleVariantLibrary(
+            variant = "release",
+            sourcesJar = true,
+            publishJavadocJar = false,
+        )
+    )
 
     pom {
         name.set("remote-logger")

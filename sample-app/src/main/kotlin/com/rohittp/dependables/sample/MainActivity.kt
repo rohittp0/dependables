@@ -3,7 +3,7 @@ package com.rohittp.dependables.sample
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import com.rohittp.dependables.remotelogger.internal.LogDumpWorker
+import com.rohittp.dependables.remotelogger.RemoteLogger
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.dump_button).setOnClickListener {
             // Same call the FCM payload would make — for manual smoke-testing without a push.
-            LogDumpWorker.enqueue(this, hours = 1)
+            RemoteLogger.enqueueDump(this, hours = 1)
         }
     }
 }

@@ -1,8 +1,6 @@
 package com.rohittp.dependables.remotelogger.internal
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.provider.Settings
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -15,6 +13,8 @@ import androidx.work.workDataOf
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import com.google.firebase.storage.StorageMetadata
+import com.rohittp.dependables.remotelogger.DeviceId
+import com.rohittp.dependables.remotelogger.ExportZipWriter
 import com.rohittp.dependables.remotelogger.RemoteLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 
 /**
- * Zips the recent log buckets and uploads the result to Firebase Storage.
+ * Zips the recent app data (databases + shared_prefs + datastore + logs) and uploads the
+ * result to Firebase Storage.
  *
  * Enqueued via [enqueue] (called from [RemoteLogger.handleMessage] on receipt of a
  * `dump_logs` push). The destination path is built from [RemoteLogger.config].
@@ -42,11 +43,10 @@ class LogDumpWorker(context: Context, params: WorkerParameters) :
         val hours = inputData.getInt(KEY_HOURS, RemoteLogger.config().defaultDumpHours)
             .coerceAtLeast(1)
 
-        val deviceId = inputData.getString(KEY_DEVICE_ID)
-            ?: runCatching { resolveAndroidId(applicationContext) }.getOrElse {
-                Timber.e(it, "LogDumpWorker: failed to resolve device id")
-                return@withContext Result.failure()
-            }
+        val deviceId = runCatching { DeviceId.get() }.getOrElse {
+            Timber.e(it, "LogDumpWorker: failed to resolve device id")
+            return@withContext Result.failure()
+        }
 
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
@@ -60,7 +60,7 @@ class LogDumpWorker(context: Context, params: WorkerParameters) :
 
         try {
             val exported = zipFile.outputStream().use { out ->
-                LogZipWriter.writeTo(applicationContext, out, logHours = hours)
+                ExportZipWriter.writeTo(applicationContext, out, logHours = hours)
             }
 
             val path = RemoteLogger.config().storagePathBuilder(deviceId, timestamp)
@@ -90,38 +90,23 @@ class LogDumpWorker(context: Context, params: WorkerParameters) :
         }
     }
 
-    @SuppressLint("HardwareIds")
-    private fun resolveAndroidId(context: Context): String {
-        val id = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        return id?.takeIf { it.isNotBlank() }
-            ?: throw IllegalStateException("ANDROID_ID is unavailable")
-    }
-
     companion object {
         const val KEY_HOURS: String = "hours"
-        const val KEY_DEVICE_ID: String = "deviceId"
         private const val UNIQUE_PREFIX = "log_dump_"
 
         /**
-         * Enqueue a one-time upload. If [deviceId] is null, the worker will resolve
-         * `Settings.Secure.ANDROID_ID` at run time. `WorkManager` is initialised by the
-         * consumer (auto-init by default).
+         * Enqueue a one-time upload. The device id is resolved by the worker itself via
+         * [DeviceId.get]. `WorkManager` is initialised by the consumer (auto-init by default).
          */
         @JvmStatic
-        @JvmOverloads
-        fun enqueue(context: Context, hours: Int, deviceId: String? = null) {
+        fun enqueue(context: Context, hours: Int) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
-            val data = if (deviceId != null) {
-                workDataOf(KEY_HOURS to hours, KEY_DEVICE_ID to deviceId)
-            } else {
-                workDataOf(KEY_HOURS to hours)
-            }
             val req = OneTimeWorkRequestBuilder<LogDumpWorker>()
                 .setConstraints(constraints)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
-                .setInputData(data)
+                .setInputData(workDataOf(KEY_HOURS to hours))
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 "$UNIQUE_PREFIX$hours",

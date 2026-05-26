@@ -25,9 +25,20 @@ import java.util.concurrent.atomic.AtomicLong
  * Multi-process safety: each process plants its own instance with a distinct [processTag], so
  * file paths never overlap. Use [ProcessTag.infer] to derive the tag from the current process name.
  */
-class FileLoggingTree(context: Context, processTag: String) : Timber.Tree() {
+class FileLoggingTree internal constructor(
+    private val logsRoot: File,
+    processTag: String,
+) : Timber.Tree() {
 
-    private val logsRoot: File = File(context.filesDir, LOGS_DIR).apply { mkdirs() }
+    init {
+        logsRoot.mkdirs()
+    }
+
+    constructor(context: Context, processTag: String) : this(
+        File(context.filesDir, LOGS_DIR),
+        processTag,
+    )
+
     private val tag: String = sanitiseTag(processTag)
 
     private val executor: ScheduledExecutorService =
@@ -184,7 +195,10 @@ class FileLoggingTree(context: Context, processTag: String) : Timber.Tree() {
         @JvmStatic
         @JvmOverloads
         fun purgeOld(context: Context, retentionDays: Long = DEFAULT_RETENTION_DAYS) {
-            val root = File(context.filesDir, LOGS_DIR)
+            purgeOldIn(File(context.filesDir, LOGS_DIR), retentionDays)
+        }
+
+        internal fun purgeOldIn(root: File, retentionDays: Long) {
             if (!root.isDirectory) return
             val dayFmt = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
                 timeZone = TimeZone.getTimeZone("UTC")

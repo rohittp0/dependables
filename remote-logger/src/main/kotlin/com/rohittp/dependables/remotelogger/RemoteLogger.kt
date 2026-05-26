@@ -12,7 +12,7 @@ import timber.log.Timber
  *
  * ```kotlin
  * RemoteLogger.init(this)
- * if (isMainProcess) RemoteLogger.subscribeForDevice(this, AndroidId.get(this))
+ * RemoteLogger.subscribeForDevice(this)
  * ```
  *
  * Inside a `FirebaseMessagingService`:
@@ -61,11 +61,11 @@ object RemoteLogger {
 
     /**
      * Subscribe the device to topic `logdump_<deviceId>` so the backend can target a single
-     * device with a `dump_logs` data message.
+     * device with a `dump_logs` data message. The device id comes from [DeviceId.get].
      */
     @JvmStatic
-    fun subscribeForDevice(context: Context, deviceId: String) {
-        val topic = TOPIC_PREFIX + sanitiseTopic(deviceId)
+    fun subscribeForDevice(context: Context) {
+        val topic = TOPIC_PREFIX + DeviceId.get()
         FirebaseMessaging.getInstance()
             .subscribeToTopic(topic)
             .addOnFailureListener { e ->
@@ -81,19 +81,22 @@ object RemoteLogger {
      * Recognised keys:
      *   - `type` = `"dump_logs"` — required
      *   - `hours` = integer string — optional, defaults to [RemoteLoggerConfig.defaultDumpHours]
-     *   - `deviceId` = string — optional override; if absent, the worker resolves
-     *     `Settings.Secure.ANDROID_ID`
      */
     @JvmStatic
     fun handleMessage(context: Context, data: Map<String, String>): Boolean {
         if (data["type"] != DUMP_TYPE) return false
         val hours = data[DUMP_HOURS_KEY]?.toIntOrNull() ?: config.defaultDumpHours
-        val deviceId = data["deviceId"]
-        LogDumpWorker.enqueue(context, hours, deviceId)
+        enqueueDump(context, hours)
         return true
     }
 
-    /** Topic names accept `[a-zA-Z0-9-_.~%]+` only. */
-    private fun sanitiseTopic(raw: String): String =
-        raw.replace(Regex("[^a-zA-Z0-9\\-_.~%]"), "_")
+    /**
+     * Manually enqueue a one-time export upload. Useful for in-app "send my logs" buttons and
+     * smoke tests. Same WorkManager job that [handleMessage] would enqueue.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun enqueueDump(context: Context, hours: Int = config.defaultDumpHours) {
+        LogDumpWorker.enqueue(context, hours)
+    }
 }

@@ -113,9 +113,10 @@
           <span class="card-arrow">↗</span>
         </div>
         <p class="card-desc">
-          A Timber tree that writes NDJSON logs to per-day/per-hour files, plus a push-triggered
-          WorkManager worker that zips and uploads them to Firebase Cloud Storage. Send a
-          <code>dump_logs</code> data message; get the logs back from any field device.
+          Timber tree + push-triggered uploader. Zips databases, shared_prefs, datastore, and
+          recent logs into Firebase Cloud Storage when a <code>dump_logs</code> data message
+          arrives. The same zip is exposed as <code>ExportZipWriter</code> for in-app
+          "export my data" UIs.
         </p>
         <div class="card-tags">
           <span class="badge badge-version">v0.1.0</span>

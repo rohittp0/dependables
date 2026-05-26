@@ -85,6 +85,16 @@
     <span class="cm">// ... fall through to your own routing</span>
 <span class="op">}</span></code></pre>
     </div>
+    <p>
+      The device id is derived from Widevine DRM with a Build-fingerprint fallback —
+      no <code>ANDROID_ID</code>, no <code>UUID.randomUUID()</code> persistence. Need to log
+      it elsewhere?
+    </p>
+    <div class="code-wrap">
+      <span class="code-lang">Anywhere.kt</span>
+      <pre><code><span class="k">val</span> id <span class="op">=</span> <span class="fn">DeviceId</span>.<span class="fn">get</span><span class="op">()</span>     <span class="cm">// stable, FCM-topic-safe</span>
+<span class="k">val</span> name <span class="op">=</span> <span class="fn">DeviceId</span>.<span class="fn">name</span><span class="op">()</span> <span class="cm">// "Samsung SM-G991B" etc.</span></code></pre>
+    </div>
   </section>
 
   <section class="section">
@@ -105,10 +115,26 @@
 <span class="op">}</span></code></pre>
     </div>
     <p>
-      The worker zips every <code>HH-&lt;tag&gt;.ndjson</code> file whose bucket falls within
-      the requested window, plus a <code>meta.json</code> envelope identifying the build, and
-      uploads to <code>user/&lt;deviceId&gt;/logs/&lt;utc-yyyyMMdd_HHmmss&gt;.zip</code>.
+      The worker zips <code>databases/</code>, <code>shared_prefs/</code>,
+      <code>datastore/</code>, and every recent <code>logs/&lt;day&gt;/&lt;file&gt;</code>,
+      plus a <code>meta.json</code> envelope identifying the build, and uploads to
+      <code>user/&lt;deviceId&gt;/logs/&lt;utc-yyyyMMdd_HHmmss&gt;.zip</code>.
     </p>
+  </section>
+
+  <section class="section">
+    <p class="section-label">In-app export</p>
+    <h2 style="margin-top:0">Same zip, any <code>OutputStream</code></h2>
+    <p>
+      <code>ExportZipWriter.writeTo</code> is the same call the upload worker makes — useful
+      for an in-app "export my data" button that writes to <code>MediaStore.Downloads</code>:
+    </p>
+    <div class="code-wrap">
+      <span class="code-lang">ExportToDownloads.kt</span>
+      <pre><code><span class="k">val</span> exported <span class="op">=</span> outputStream.<span class="fn">use</span> <span class="op">{</span> out <span class="op">-&gt;</span>
+    <span class="fn">ExportZipWriter</span>.<span class="fn">writeTo</span><span class="op">(</span>context<span class="op">,</span> out<span class="op">,</span> logHours <span class="op">=</span> <span class="st">72</span><span class="op">)</span>
+<span class="op">}</span></code></pre>
+    </div>
   </section>
 
   <section class="section">
