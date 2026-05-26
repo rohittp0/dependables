@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">remote-logger sample</string>
+    <string name="log_a_line">Log a line</string>
+    <string name="force_dump">Force dump now</string>
+    <string name="hint">Tap "Log a line" a few times, then "Force dump now" to enqueue an upload. Logs land under filesDir/logs/&lt;day&gt;/&lt;hour&gt;-main.ndjson.</string>
+</resources>

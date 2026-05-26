@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/hint"
+        android:textSize="14sp"
+        android:paddingBottom="24dp" />
+
+    <Button
+        android:id="@+id/log_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/log_a_line" />
+
+    <Button
+        android:id="@+id/dump_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/force_dump"
+        android:layout_marginTop="12dp" />
+</LinearLayout>

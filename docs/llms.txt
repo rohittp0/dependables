@@ -1,0 +1,13 @@
+# Dependables — Reusable Android Libraries
+
+> Small, focused Android libraries published to Maven Central.
+> One artifact per concern, no kitchen-sink SDK.
+
+## Libraries
+
+- [remote-logger](https://rohittp.com/dependables/remote-logger): Timber tree that writes NDJSON logs to per-day/per-hour files, plus a push-notification-triggered WorkManager worker that zips and uploads them to Firebase Cloud Storage. Send a `dump_logs` FCM data message; get the logs back from any installed device.
+
+## Source
+
+- [GitHub](https://github.com/rohittp0/dependables)
+- [Maven Central](https://central.sonatype.com/search?q=com.rohittp.dependables)

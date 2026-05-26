@@ -1,1 +1,9 @@
 .idea/
+.claude/settings.local.json
+**/build/
+.gradle/
+local.properties
+.gitnexus
+AGENTS.md
+**/.kotlin
+*.iml
