@@ -1,82 +1,147 @@
 name: Build and Publish
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
-      libraries:
-        description: 'Comma-separated list of libraries to publish (e.g. remote-logger)'
+      modules:
+        description: "Comma-separated Gradle modules"
         required: true
         type: string
 
 jobs:
   detect:
-    name: Detect changed libraries
     runs-on: ubuntu-latest
     outputs:
-      libraries: ${{ steps.changed.outputs.libraries }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
+      modules: ${{ steps.modules.outputs.value }}
 
-      - name: Find changed libraries
-        id: changed
+    steps:
+      - id: modules
+        shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            libraries=$(echo "${{ inputs.libraries }}" \
-              | tr ',' '\n' | tr -d ' ' | grep -v '^$' \
-              | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          else
-            # Only treat a library as changed if its `version = "..."` line was added or removed
-            # in this push. Other build-script edits (publishing config, dep tweaks) don't
-            # warrant a publish — Maven Central rejects republishing the same GAV anyway.
-            changed_files=$(git diff --name-only HEAD~1 HEAD 2>/dev/null \
-              | grep -E '^[^/]+/build\.gradle\.kts$' || true)
-            list=()
-            for f in $changed_files; do
-              if git diff HEAD~1 HEAD -- "$f" | grep -qE '^[+-]version\s*=\s*"'; then
-                list+=("$(dirname "$f")")
-              fi
-            done
-            libraries=$(printf '%s\n' "${list[@]}" | sort -u \
-              | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          fi
-          echo "libraries=${libraries:-[]}" >> "$GITHUB_OUTPUT"
-          echo "Changed libraries: ${libraries:-[]}"
+          value=$(echo "${{ inputs.modules }}" \
+            | tr ',' '\n' \
+            | tr -d ' ' \
+            | grep -v '^$' \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
+          echo "value=$value" >> "$GITHUB_OUTPUT"
 
   publish:
-    name: Publish ${{ matrix.library }}
     needs: detect
-    if: needs.detect.outputs.libraries != '[]'
+    name: Publish ${{ matrix.module }}
     runs-on: ubuntu-latest
+
+    concurrency:
+      group: r2-release-${{ matrix.module }}
+      cancel-in-progress: false
+
     permissions:
       contents: read
+
     strategy:
       fail-fast: false
       matrix:
-        library: ${{ fromJson(needs.detect.outputs.libraries) }}
+        module: ${{ fromJson(needs.detect.outputs.modules) }}
+
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
           cache: gradle
 
-      - name: Setup Gradle
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: false
 
-      - name: Build and publish ${{ matrix.library }}
-        run: ./gradlew :${{ matrix.library }}:build :${{ matrix.library }}:publishToMavenCentral
+      - name: Verify publishing configuration
+        shell: bash
         env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          required=(
+            R2_ENDPOINT
+            R2_BUCKET
+            R2_PUBLIC_URL
+            R2_ACCESS_KEY_ID
+            R2_SECRET_ACCESS_KEY
+            SIGNING_KEY
+            SIGNING_KEY_ID
+            SIGNING_KEY_PASSWORD
+          )
+
+          for name in "${required[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing publishing value: $name"
+              exit 1
+            fi
+          done
+
+      - name: Reject an existing release
+        shell: bash
+        env:
+          MODULE: ${{ matrix.module }}
+          R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          module="$MODULE"
+
+          if [[ ! "$module" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] \
+            || [[ ! -f "$module/build.gradle.kts" ]]; then
+            echo "::error::Unknown Gradle module: $module"
+            exit 1
+          fi
+
+          version=$(sed -nE \
+            's/^[[:space:]]*version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' \
+            "$module/build.gradle.kts")
+
+          if [[ -z "$version" ]] || [[ "$version" == *$'\n'* ]]; then
+            echo "::error::Could not determine one version for module: $module"
+            exit 1
+          fi
+
+          group_path="com/rohittp/dependables"
+          key="${group_path}/${module}/${version}/${module}-${version}.pom"
+
+          count=$(aws \
+            --endpoint-url "$R2_ENDPOINT" \
+            s3api list-objects-v2 \
+            --bucket "$R2_BUCKET" \
+            --prefix "$key" \
+            --max-keys 1 \
+            --query KeyCount \
+            --output text)
+
+          if [[ "$count" != "0" ]]; then
+            echo "::error::Release already exists: $key"
+            exit 1
+          fi
+
+      - name: Build and publish
+        env:
+          MODULE: ${{ matrix.module }}
+          R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+        run: |
+          ./gradlew \
+            ":${MODULE}:build" \
+            ":${MODULE}:publishAllPublicationsToR2Repository"

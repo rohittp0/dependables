@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dependables — Reusable Android Libraries</title>
-  <meta name="description" content="Small, focused Android libraries published to Maven Central. One artifact per concern, no kitchen-sink SDK." />
+  <meta name="description" content="Small, focused Android libraries published at maven.rohittp.com. One artifact per concern, no kitchen-sink SDK." />
   <link rel="canonical" href="https://rohittp.com/dependables/" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Dependables" />
   <meta property="og:title" content="Dependables — Reusable Android Libraries" />
-  <meta property="og:description" content="Small, focused Android libraries published to Maven Central. One artifact per concern, no kitchen-sink SDK." />
+  <meta property="og:description" content="Small, focused Android libraries published at maven.rohittp.com. One artifact per concern, no kitchen-sink SDK." />
   <meta property="og:url" content="https://rohittp.com/dependables/" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Dependables — Reusable Android Libraries" />
-  <meta name="twitter:description" content="Small, focused Android libraries published to Maven Central. One artifact per concern, no kitchen-sink SDK." />
+  <meta name="twitter:description" content="Small, focused Android libraries published at maven.rohittp.com. One artifact per concern, no kitchen-sink SDK." />
 
   <link rel="stylesheet" href="style.css" />
 
@@ -29,7 +29,7 @@
         "@id": "https://rohittp.com/dependables/#website",
         "url": "https://rohittp.com/dependables/",
         "name": "Dependables",
-        "description": "Reusable Android libraries published to Maven Central."
+        "description": "Reusable Android libraries published at maven.rohittp.com."
       },
       {
         "@type": "SoftwareApplication",
@@ -65,7 +65,7 @@
 <div class="home-layout">
 
   <section class="hero">
-    <p class="hero-eyebrow">Android Libraries · Maven Central</p>
+    <p class="hero-eyebrow">Android Libraries · Public Maven</p>
     <h1 class="hero-title">Depend<em>ables</em></h1>
     <p class="hero-desc">
       Small, focused Android libraries you can pull in one at a time. No kitchen-sink SDK,
@@ -80,11 +80,36 @@
 
   <section class="section">
     <p class="section-label">Getting Started</p>
-    <h2 style="margin-top:0">Add a dependency</h2>
+    <h2 style="margin-top:0">Add the repository and dependency</h2>
     <p>
-      All libraries are published to
-      <a href="https://central.sonatype.com/search?q=com.rohittp.dependables" target="_blank" rel="noopener noreferrer">Maven Central</a>.
-      Add it in your module's <code>build.gradle.kts</code>:
+      All libraries are published to the public
+      <a href="https://maven.rohittp.com" target="_blank" rel="noopener noreferrer">maven.rohittp.com</a>
+      repository. Add the shared repository in <code>settings.gradle.kts</code>:
+    </p>
+
+    <div class="code-wrap">
+      <span class="code-lang">settings.gradle.kts</span>
+      <pre><code><span class="fn">pluginManagement</span> <span class="op">{</span>
+    <span class="fn">repositories</span> <span class="op">{</span>
+        <span class="fn">maven</span><span class="op">(</span><span class="st">"https://maven.rohittp.com"</span><span class="op">)</span>
+        <span class="fn">gradlePluginPortal</span><span class="op">()</span>
+        <span class="fn">mavenCentral</span><span class="op">()</span>
+        <span class="fn">google</span><span class="op">()</span>
+    <span class="op">}</span>
+<span class="op">}</span>
+
+<span class="fn">dependencyResolutionManagement</span> <span class="op">{</span>
+    <span class="fn">repositories</span> <span class="op">{</span>
+        <span class="fn">maven</span><span class="op">(</span><span class="st">"https://maven.rohittp.com"</span><span class="op">)</span>
+        <span class="fn">mavenCentral</span><span class="op">()</span>
+        <span class="fn">google</span><span class="op">()</span>
+    <span class="op">}</span>
+<span class="op">}</span></code></pre>
+    </div>
+    <p>
+      <code>pluginManagement</code> resolves plugin IDs; <code>dependencyResolutionManagement</code>
+      resolves ordinary Maven, Android, and KMP coordinates. Then add the library in your
+      module's <code>build.gradle.kts</code>:
     </p>
 
     <div class="code-wrap">
@@ -96,7 +121,7 @@
 
     <div class="callout tip">
       <p class="callout-title">No authentication required</p>
-      <p>Maven Central is public — no credentials or account needed.</p>
+      <p>The repository is public — no credentials or account needed.</p>
     </div>
   </section>
 
@@ -162,7 +187,7 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <a href="index" class="footer-brand">Dependables</a>
-    <span class="footer-meta">Published to Maven Central · Group <code>com.rohittp.dependables</code></span>
+    <span class="footer-meta">Published at maven.rohittp.com · Group <code>com.rohittp.dependables</code></span>
     <div class="footer-links">
       <a href="https://github.com/rohittp0/dependables" target="_blank" rel="noopener noreferrer">Source</a>
       <a href="remote-logger">remote-logger</a>

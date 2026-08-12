@@ -51,12 +51,10 @@ dependencies {
 }
 
 mavenPublishing {
-    // publishToMavenCentral(automaticRelease = true) and signing are configured centrally in
-    // the root build.gradle.kts `subprojects { }` block.
+    // R2 publishing and signing are configured centrally in the root build.gradle.kts.
 
     // AGP 9's bundled Dokka (1.4.32) cannot read Kotlin 2.3 metadata — skip the javadoc jar
-    // entirely. Sources jar still ships, and Maven Central accepts a sources-only publish for
-    // Kotlin libraries via vanniktech.
+    // entirely. The sources jar still ships alongside the Android publication.
     configure(
         com.vanniktech.maven.publish.AndroidSingleVariantLibrary(
             variant = "release",

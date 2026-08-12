@@ -1,6 +1,7 @@
 # Dependables
 
-Small, focused Android libraries published to Maven Central under the group
+Small, focused Android libraries published at [maven.rohittp.com](https://maven.rohittp.com)
+under the group
 `com.rohittp.dependables`. Each library solves one problem and stays out of the way
 of the rest.
 
@@ -15,7 +16,7 @@ dependables/
 ├── remote-logger/      # the first library
 ├── sample-app/         # tiny Android app that wires everything up end-to-end
 ├── docs/               # static site published to GitHub Pages
-└── .github/workflows/  # CI: build PRs, publish on `version = ` bumps
+└── .github/workflows/  # manually dispatched, immutable R2 releases
 ```
 
 ## Build
@@ -25,6 +26,40 @@ dependables/
 ./gradlew :remote-logger:test              # library unit tests
 ./gradlew :remote-logger:publishToMavenLocal
 ./gradlew :sample-app:installDebug         # install the demo on a connected device
+```
+
+## Use from Gradle
+
+The repository is public; consumers do not need credentials. Add the shared repository in
+`settings.gradle.kts`:
+
+```kotlin
+pluginManagement {
+    repositories {
+        maven("https://maven.rohittp.com")
+        gradlePluginPortal()
+        mavenCentral()
+        google()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        maven("https://maven.rohittp.com")
+        mavenCentral()
+        google()
+    }
+}
+```
+
+`pluginManagement` resolves Gradle plugin IDs hosted in the shared repository.
+`dependencyResolutionManagement` resolves ordinary Maven, Android, and KMP coordinates,
+including Dependables.
+
+```kotlin
+dependencies {
+    implementation("com.rohittp.dependables:remote-logger:0.1.0")
+}
 ```
 
 ## Sample app

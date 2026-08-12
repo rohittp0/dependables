@@ -1,6 +1,6 @@
 # Dependables — Reusable Android Libraries
 
-> Small, focused Android libraries published to Maven Central.
+> Small, focused Android libraries published at https://maven.rohittp.com.
 > One artifact per concern, no kitchen-sink SDK.
 
 ## Libraries
@@ -10,4 +10,4 @@
 ## Source
 
 - [GitHub](https://github.com/rohittp0/dependables)
-- [Maven Central](https://central.sonatype.com/search?q=com.rohittp.dependables)
+- [Public Maven repository](https://maven.rohittp.com)
