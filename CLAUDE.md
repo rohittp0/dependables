@@ -68,3 +68,12 @@ The root project applies shared config only — no library code lives at the roo
 - Signing uses `ORG_GRADLE_PROJECT_signingInMemoryKey`, `ORG_GRADLE_PROJECT_signingInMemoryKeyId`, and `ORG_GRADLE_PROJECT_signingInMemoryKeyPassword`
 - `.github/workflows/publish.yml` rejects a coordinate whose primary POM already exists before publishing
 - Local `publishToMavenLocal` works without any signing key configured
+
+## Documentation Versions
+
+- Release versions must not be hardcoded in HTML.
+- Version nodes use `data-maven-version` with the published Maven artifact ID as the value.
+- `docs/versions.js` resolves `<versioning><release>` directly from the artifact metadata at `https://maven.rohittp.com`.
+- Every HTML page containing a version node loads the shared `versions.js` script.
+- The R2 bucket allows browser reads from the documentation origin `https://rohittp.com`.
+- Publishing a new release requires no documentation commit or version-sync automation.

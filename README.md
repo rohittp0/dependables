@@ -34,15 +34,6 @@ The repository is public; consumers do not need credentials. Add the shared repo
 `settings.gradle.kts`:
 
 ```kotlin
-pluginManagement {
-    repositories {
-        maven("https://maven.rohittp.com")
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-
 dependencyResolutionManagement {
     repositories {
         maven("https://maven.rohittp.com")
@@ -52,15 +43,18 @@ dependencyResolutionManagement {
 }
 ```
 
-`pluginManagement` resolves Gradle plugin IDs hosted in the shared repository.
 `dependencyResolutionManagement` resolves ordinary Maven, Android, and KMP coordinates,
-including Dependables.
+including Dependables. This repository does not currently publish Gradle plugins, so no
+`pluginManagement` entry is needed.
 
 ```kotlin
 dependencies {
-    implementation("com.rohittp.dependables:remote-logger:0.1.0")
+    implementation("com.rohittp.dependables:remote-logger:<version>")
 }
 ```
+
+The [live documentation](https://rohittp.com/dependables/#common-setup) reads the current
+release directly from the public Maven metadata.
 
 ## Sample app
 
